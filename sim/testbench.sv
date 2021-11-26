@@ -7,10 +7,8 @@ module testbench ();
   logic [7:0] input_data    ;
 
   logic [7:0] ones;
-  logic [7:0] zeros;
 
-  logic [7:0] ones_tb [2];
-  logic [7:0] zeros_tb[2];
+  logic [7:0] ones_tb[2];
 
   logic [31:0] bus;
   assign bus = {<<8{dut.shift_reg}};
@@ -25,14 +23,13 @@ module testbench ();
   default clocking main @(posedge clk);
   endclocking
 
-  static_ctrl dut #(
+  static_ctrl #(
     .WORD_SIZE(32)
-  )(
+  ) dut (
     .clk       (clk       ),
     .rst_n     (rst_n     ),
     .input_data(input_data),
-    .ones      (ones      ),
-    .zeros     (zeros     )
+    .ones      (ones      )
   );
 
   always_ff @(posedge clk iff rst_n)
@@ -41,11 +38,8 @@ module testbench ();
   always_ff @(posedge clk iff rst_n)
     begin
       ones_tb[0]  <= $countones(bus);
-      zeros_tb[0] <= $size(bus) - $countones(bus);
       ones_tb[1]  <= ones_tb[0];
-      zeros_tb[1] <= zeros_tb[0];
       assert(ones_tb[1] == ones) else $display("%tns Expected: %d but %d", $realtime, ones_tb[1], ones);
-      assert(zeros_tb[1] == zeros) else $display("%tns Expected: %d but %d", $realtime, zeros_tb[1], zeros);
     end
 
 endmodule : testbench

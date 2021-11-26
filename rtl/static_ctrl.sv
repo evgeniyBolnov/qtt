@@ -5,8 +5,7 @@ module static_ctrl #(
   input                      clk       ,
   input                      rst_n     ,
   input        [        7:0] input_data,
-  output logic [BIT_RES-1:0] ones,
-  output logic [BIT_RES-1:0] zeros
+  output logic [BIT_RES-1:0] ones
 );
 
   localparam BYTE_CNT = WORD_SIZE / 8;
@@ -14,7 +13,6 @@ module static_ctrl #(
   logic [                 7:0] shift_reg[BYTE_CNT];
   logic [$clog2(BYTE_CNT)-1:0] rx_cnt             ;
 
-  logic [3+BYTE_CNT:0] ones_l             ;
   logic [         3:0] ones_byte[BYTE_CNT];
 
   always_ff @(posedge clk or negedge rst_n)
@@ -42,25 +40,13 @@ module static_ctrl #(
           ones_byte[i] <= bit_count(shift_reg[i]);
     end
 
-  //assign ones_l = (ones_byte[0] + ones_byte[1]) + (ones_byte[2] + ones_byte[3]);
-
-  always_ff @(posedge clk) begin
-    for(int i = 0; i < BYTE_CNT; i++)
-      ones_l <= ones_l + ones_byte[i];
-  end
-
-  always_ff @(posedge clk or negedge rst_n)
+  always_ff @(posedge clk)
     begin
-      if( ~rst_n)
-        begin
-          zeros <= '0;
-          ones  <= '0;
-        end
+      if( ~rst_n )
+        ones <= '0;
       else
-        begin
-          zeros <= WORD_SIZE - ones_l;
-          ones  <= ones_l;
-        end
+        for(int i = 0; i < BYTE_CNT; i++)
+          ones <= ones + ones_byte[i];
     end
 
 
