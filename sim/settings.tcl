@@ -12,6 +12,7 @@ set design_library {
     { 
         ../rtl 
         { 
+            ones_count.sv
             static_ctrl.sv
         } 
     } 

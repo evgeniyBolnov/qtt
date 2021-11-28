@@ -1,19 +1,23 @@
 module static_ctrl #(
-  parameter WORD_SIZE = 256                   ,
-  parameter BIT_RES   = $clog2(WORD_SIZE * 8)
+  parameter WORD_SIZE = 256              ,
+  parameter BIT_RES   = $clog2(WORD_SIZE)
 ) (
-  input                      clk       ,
-  input                      rst_n     ,
-  input        [        7:0] input_data,
-  output logic [BIT_RES-1:0] ones
+  input                      clk              ,
+  input                      rst_n            ,
+  input        [        7:0] input_data       ,
+  output logic [BIT_RES-1:0] ones             ,
+  output logic [BIT_RES-1:0] change_sign_count
 );
 
   localparam BYTE_CNT = WORD_SIZE / 8;
 
+  logic [       WORD_SIZE-1:0] data               ;
   logic [                 7:0] shift_reg[BYTE_CNT];
   logic [$clog2(BYTE_CNT)-1:0] rx_cnt             ;
 
-  logic [         3:0] ones_byte[BYTE_CNT];
+  always_comb
+    for (int i = 0; i < BYTE_CNT; i++)
+      data[8*i+:8] = shift_reg[i];
 
   always_ff @(posedge clk or negedge rst_n)
     begin
@@ -30,36 +34,52 @@ module static_ctrl #(
         end
     end
 
-  always_ff @(posedge clk or negedge rst_n)
-    begin
-      if( ~rst_n )
-        for( int i = 0; i < BYTE_CNT; i++)
-          ones_byte[i] <= '0;
-      else
-        for( int i = 0; i < BYTE_CNT; i++)
-          ones_byte[i] <= bit_count(shift_reg[i]);
-    end
+  ones_count #(
+    .WORD_SIZE(WORD_SIZE)
+  ) ones_count_inst (
+    .clk(clk ),
+    .in (data),
+    .out(ones)
+  );
 
-  always_ff @(posedge clk)
-    begin
-      if( ~rst_n )
-        ones <= '0;
-      else
-        for(int i = 0; i < BYTE_CNT; i++)
-          ones <= ones + ones_byte[i];
-    end
-
-
-  function logic [3:0] bit_count (logic [7:0]in);
-    logic [1:0] lr0[4];
-    logic [2:0] lr1[2];
-    lr0[0] = in[0] + in[1];
-    lr0[1] = in[2] + in[3];
-    lr0[2] = in[4] + in[5];
-    lr0[3] = in[6] + in[7];
-    lr1[0] = lr0[0] + lr0[1];
-    lr1[1] = lr0[2] + lr0[3];
-    return lr1[0] + lr1[1];
-  endfunction : bit_count
+  change_sign #(
+    .WORD_SIZE(WORD_SIZE)
+  ) change_sign_inst (
+    .clk              (clk              ),
+    .data_in          (data             ),
+    .change_sign_count(change_sign_count)
+  );
 
 endmodule : static_ctrl
+
+module change_sign #(
+  parameter WORD_SIZE = 64
+) (
+  input                          clk              ,
+  input  [        WORD_SIZE-1:0] data_in          ,
+  output [$clog2(WORD_SIZE)-1:0] change_sign_count
+);
+
+  (* keep *)logic [WORD_SIZE-1:0] change_sign;
+
+  genvar i;
+
+  generate
+    begin
+      for (i = 0; i < WORD_SIZE - 1; i++)
+        begin: sign_detect
+          assign change_sign[i] = data_in[i] ^ data_in[i+1];
+        end
+      assign change_sign[WORD_SIZE-1] = 1'b0;
+    end
+  endgenerate
+
+  ones_count #(
+    .WORD_SIZE(WORD_SIZE)
+  ) ones_count_inst (
+    .clk(clk              ),
+    .in (change_sign      ),
+    .out(change_sign_count)
+  );
+
+endmodule

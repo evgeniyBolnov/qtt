@@ -7,10 +7,12 @@ add wave -noupdate /testbench/rst_n
 add wave -noupdate /testbench/dut/input_data
 add wave -noupdate /testbench/dut/shift_reg
 add wave -noupdate -radix unsigned /testbench/dut/rx_cnt
+add wave -noupdate -divider {Ones Counter}
 add wave -noupdate -radix unsigned /testbench/dut/ones
-add wave -noupdate -radix unsigned /testbench/dut/zeros
-add wave -noupdate -radix unsigned {/testbench/ones_tb[1]}
-add wave -noupdate -radix unsigned {/testbench/zeros_tb[1]}
+add wave -noupdate -radix unsigned {/testbench/ones_tb[2]}
+add wave -noupdate -divider {Change of sign}
+add wave -noupdate /testbench/change_sign_count
+add wave -noupdate {/testbench/changes_tb[2]}
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {45 ns} 0} {{Cursor 2} {116 ns} 0}
 quietly wave cursor active 2
@@ -28,4 +30,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits us
 update
-WaveRestoreZoom {0 ns} {224 ns}
+WaveRestoreZoom {0 ns} {242 ns}
