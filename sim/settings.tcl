@@ -13,6 +13,7 @@ set design_library {
         ../rtl 
         { 
             ones_count.sv
+            change_sign.sv
             static_ctrl.sv
         } 
     } 
