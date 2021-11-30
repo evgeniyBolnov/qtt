@@ -19,6 +19,7 @@ module testbench ();
   logic [8:0] ones_max_len ;
   logic [8:0] max_len_ones ;
   logic [8:0] zeros_max_len;
+  logic [8:0] max_len_zeros;
 
   logic [DATA_WIDTH-1:0] bus;
   assign bus = {<<8{dut.shift_reg}};
@@ -42,29 +43,25 @@ module testbench ();
     .ones             (ones             ),
     .change_sign_count(change_sign_count),
     .output_data      (output_data      ),
-    .ones_max_len     (ones_max_len     )
+    .ones_max_len     (ones_max_len     ),
+    .zeros_max_len    (zeros_max_len    ),
+    .valid_data       (valid_data       )
   );
 
   always_ff @(posedge clk iff rst_n)
     input_data <= $random();
 
-  always_comb
-    begin
-      ones_tb = $countones(output_data);
-      assert(ones_tb == ones) else $display("%tns Expected: %d but %d", $realtime, ones_tb[2], ones);
-    end
-
-  always_comb
-    begin
-      changes_tb = changes(output_data);
-      assert(changes_tb == change_sign_count) else $display("%tns Expected: %d but %d", $realtime, changes_tb[2], change_sign_count);
-    end
-
+  assign ones_tb       = $countones(output_data);
+  assign changes_tb    = changes(output_data);
   assign max_len_ones  = max_len(output_data, 1'b1);
+  assign max_len_zeros = max_len(output_data, 1'b0);
 
-  always_ff @(posedge clk)
+  always_ff @(posedge clk iff valid_data)
     begin
-      assert(max_len_ones == ones_max_len) else $display("%tns Expected len: %d but %d", $realtime, max_len_ones, ones_max_len);
+      assert(ones_tb == ones) else $display("%tns Expected: %d but %d", $realtime, ones_tb[2], ones);
+      assert(changes_tb == change_sign_count) else $display("%tns Expected: %d but %d", $realtime, changes_tb[2], change_sign_count);
+      assert(max_len_ones == ones_max_len) else $display("%tns Expected Ones Length: %d but %d", $realtime, max_len_ones, ones_max_len);
+      assert(max_len_zeros == zeros_max_len) else $display("%tns Expected Zeros Length: %d but %d", $realtime, max_len_zeros, zeros_max_len);
     end
 
   function logic [7:0] changes(input [DATA_WIDTH-1:0] in);
