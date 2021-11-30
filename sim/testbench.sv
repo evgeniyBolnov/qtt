@@ -21,8 +21,10 @@ module testbench ();
   logic [8:0] zeros_max_len;
   logic [8:0] max_len_zeros;
 
-  logic [DATA_WIDTH-1:0] bus;
-  assign bus = {<<8{dut.shift_reg}};
+  logic v1_valid ;
+  logic vcs_valid;
+  logic l0_valid ;
+  logic l1_valid ;
 
   initial forever #5 clk = ~clk;
 
@@ -35,7 +37,15 @@ module testbench ();
   endclocking
 
   static_ctrl #(
-    .WORD_SIZE(DATA_WIDTH)
+    .WORD_SIZE(DATA_WIDTH),
+    .V1_MIN   (100       ),
+    .V1_MAX   (120       ),
+    .Vcs_MIN  (50        ),
+    .Vcs_MAX  (100       ),
+    .L0_MIN   (4         ),
+    .L0_MAX   (24        ),
+    .L1_MIN   (4         ),
+    .L1_MAX   (24        )
   ) dut (
     .clk              (clk              ),
     .rst_n            (rst_n            ),
@@ -45,7 +55,11 @@ module testbench ();
     .output_data      (output_data      ),
     .ones_max_len     (ones_max_len     ),
     .zeros_max_len    (zeros_max_len    ),
-    .valid_data       (valid_data       )
+    .valid_data       (valid_data       ),
+    .v1_valid         (v1_valid         ),
+    .l0_valid         (l0_valid         ),
+    .l1_valid         (l1_valid         ),
+    .vcs_valid        (vcs_valid        )
   );
 
   always_ff @(posedge clk iff rst_n)
@@ -62,6 +76,12 @@ module testbench ();
       assert(changes_tb == change_sign_count) else $display("%tns Expected: %d but %d", $realtime, changes_tb[2], change_sign_count);
       assert(max_len_ones == ones_max_len) else $display("%tns Expected Ones Length: %d but %d", $realtime, max_len_ones, ones_max_len);
       assert(max_len_zeros == zeros_max_len) else $display("%tns Expected Zeros Length: %d but %d", $realtime, max_len_zeros, zeros_max_len);
+    end
+
+  always_ff @(posedge clk iff valid_data)
+    begin
+      if( v1_valid & vcs_valid & l0_valid & l1_valid )
+        $display("%tns Found number: %x", $realtime, output_data);
     end
 
   function logic [7:0] changes(input [DATA_WIDTH-1:0] in);
